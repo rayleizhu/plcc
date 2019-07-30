@@ -4,7 +4,10 @@
 ## First start with some standard catkin stuff.
 cmake_minimum_required(VERSION 2.8.3)
 project(publish_selected_patch)
-find_package(catkin REQUIRED COMPONENTS rviz pcl_ros pcl_msgs)
+find_package(catkin REQUIRED COMPONENTS rviz)
+
+set(CMAKE_CXX_STANDARD 11)
+
 catkin_package()
 include_directories(${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})

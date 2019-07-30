@@ -5,4 +5,4 @@ devel/
 .vscode/
 .catkin_workspace
 build/
-
+data/

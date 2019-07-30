@@ -1,0 +1,21 @@
+<package>
+  <name>publish_selected_patch</name>
+  <version>1.0.0</version>
+  <description>
+     Publishes selected points on /selected_points topic.
+  </description>
+  <maintainer email="leifzhu@foxmail.com">Zhu Lei</maintainer>
+  <license>MIT</license>
+
+  <author>Zhu Lei</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>rviz</build_depend>
+  <run_depend>rviz</run_depend>
+
+  <export>
+      <rosdoc config="${prefix}/rosdoc.yaml"/>
+      <rviz plugin="${prefix}/plugin_description.xml"/>
+  </export>
+</package>

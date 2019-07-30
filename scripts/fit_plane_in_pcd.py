@@ -8,6 +8,8 @@ from mayavi import mlab
 import copy
 import scipy
 
+import argparse
+import os
 
 class Plane3D:
     def __init__(self, normal=np.zeros(3), center=np.zeros(3)):
@@ -114,25 +116,6 @@ class Ransac:
         else:
             return best_model
                 
-                
-def fit_plane(pts):
-    # TODO: outlier removal or ransac
-    pca = PCA(n_components=3)
-    print("fitting plane for %s"%(pcd_csv_name))
-    pca.fit(pts)
-    pcd_center = np.mean(pts, axis=0)
-    print("variance ratio:")
-    print(pca.explained_variance_ratio_)
-    print("variance:")
-    print(pca.explained_variance_)
-    print("three axes:")
-    print(pca.components_)
-
-    print("pcd center:")
-    print(pcd_center)
-    print("normal:")
-    print(pca.components_[-1])
-    return pts, pca.components_[-1], pcd_center
 
 def statistical_outilier_removal(data, k=8, z_max=2):
     """
@@ -144,31 +127,52 @@ def statistical_outilier_removal(data, k=8, z_max=2):
     sor_filter = abs(z_distances) < z_max
     return data[sor_filter]
 
-def main(sor=True, using_ransac=False):
-    csv_file_list = ['selected_pcd_patch_%d.csv'%i for i in range(1, 4) ]
+def main():
+    parser = argparse.ArgumentParser(description="Fit planes with point cloud patches.")
+    parser.add_argument('--input_dir', type=str, default='../data/output/pcd_patches',
+                        help="The directory including point cloud patches.")
+    parser.add_argument('--output_file', type=str, default='../data/output/plane_normals_and_intersection_pcd.csv',
+                        help="Where to put the result.")
+    parser.add_argument('--no-sor', dest='sor', action='store_false', help='Disable statistical outlier removal.')
+    parser.add_argument('--ransac', dest='ransac', action='store_true', help='Enable RANSAC for plane fitting.')
+    parser.add_argument('--verbose', dest='verbose', action='store_true', help='Output verbosely')
+
+    parser.set_defaults(sor=True)
+    parser.set_defaults(ransac=False)
+    parser.set_defaults(verbose=False)
+
+    args = parser.parse_args()
+
+    # TODO: multiple planes
+    #csv_file_list = [ 'selected_pcd_patch_%d.csv'%i for i in range(1, 4) ]
+    csv_file_list = [ os.path.join(args.input_dir, 'selected_pcd_patch_%d.csv'%i) for i in range(1, 4) ]
+
     n_list = []
-    c_list = []
-    
+    c_list = [] 
     for i, csv in enumerate(csv_file_list):
         pts = pd.read_csv(csv).to_numpy()
 
-        if sor == True:
+        if args.verbose:
+            print('--------Fitting plane %d---------'%i)
+
+        if args.sor == True:
+            # TODO: user control on filter condition
             pts = statistical_outilier_removal(pts, k=10, z_max=2)
-        if using_ransac == True:
-            plane = Ransac(0.5, 100, 1e-3, 0.9).run(pts, Plane3D(), verbose=True)
+        if args.ransac == True:
+            plane = Ransac(0.5, 100, 1e-3, 0.9).run(pts, Plane3D(), verbose=args.verbose)
         else:
             plane = Plane3D()
-            plane.fit(pts)
-        #print(plane.get_error(pts))
+            plane.fit(pts, verbose=args.verbose)
+
         n, center = plane.get_parameter()
+        # TODO: Visualize both inliers and outliers?
         pts = plane.pcd
-        #pts, n, center = fit_plane(csv)
+
         # FIXME: the normal direction of planes
         if n[0] > 0:
             n = -n
         n_list.append(n)
         c_list.append(np.dot(n, center))
-        print("----------------")
 
         # TODO: more robust visualization
         def f(x, y):
@@ -191,10 +195,17 @@ def main(sor=True, using_ransac=False):
     mlab.points3d([intersection[0]], [intersection[1]], [intersection[2]], scale_factor=0.03)
     mlab.show()
 
+
+    if not os.path.exists(os.path.dirname(args.output_file)):
+        os.makedirs(os.path.dirname(args.output_file))
+
     df = pd.DataFrame(np.concatenate([N, intersection[np.newaxis, :]], axis=0),
                       columns=['x', 'y', 'z'],
                       index=['normal_1', 'normal_2', 'normal_3', 'intersection'])
-    df.to_csv('plane_normals_and_intersection_pcd.csv')
+    df.to_csv(args.output_file)
+
+    if args.verbose:
+        print('Result is stored to %s' % args.output_file)
 
 if __name__ == '__main__':
-    main(True, False)
+    main()

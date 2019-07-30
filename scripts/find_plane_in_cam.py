@@ -6,8 +6,22 @@ from scipy.spatial.transform import Rotation as R
 import numpy as np
 from mayavi import mlab
 
+import os
+import argparse
+
 def main():
-    df = pd.read_csv('tf_cam_to_tag.csv').to_numpy()
+
+    parser = argparse.ArgumentParser(description="Find planes in camera frame.")
+    parser.add_argument('--input_file', type=str, default='../data/output/tf_cam_to_tag.csv',
+                        help="Input file including transformations from tag frame to camera frame.")
+    parser.add_argument('--output_file', type=str, default='../data/output/plane_normals_and_intersection_cam.csv',
+                        help="Where to put the result.")
+    parser.add_argument('--verbose', dest='verbose', action='store_true', help='Output verbosely')
+    parser.set_defaults(verbose=False)
+
+    args = parser.parse_args()
+
+    df = pd.read_csv(args.input_file).to_numpy()
     n_list = []
     d_list = []
     for i in range(3):
@@ -21,9 +35,9 @@ def main():
         d = -np.dot(e3, t)
         n_list.append(n)
         d_list.append(d)
-        # debug
-        print('cam posistion in tag %d' % (i+1))
-        print(-np.dot(rot_mat.T, t))
+        
+        if args.verbose:
+            print('position of tag%d in camera frame:' % (i), -np.dot(rot_mat.T, t))
 
     N = np.stack(n_list)
     c = np.stack(d_list)
@@ -47,8 +61,10 @@ def main():
     df = pd.DataFrame(np.append(N, intersection[np.newaxis, :], axis=0),
                       columns=['x', 'y', 'z'],
                       index=['normal_1', 'normal_2', 'normal_3', 'intersection'])
-    df.to_csv('plane_normals_and_intersection_cam.csv')
+    df.to_csv(args.output_file)
 
-    
+    if args.verbose:
+        print('Result is stored to %s' % args.output_file)
+
 if __name__ == '__main__':
     main()

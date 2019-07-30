@@ -7,6 +7,9 @@ from scipy.spatial.transform import Rotation as R
 import numpy as np
 from mayavi import mlab
 
+import argparse
+import os
+
 def gen_cost_func(P, Q):
     def cost(angle):
         r = R.from_euler('zyx', angle, degrees=True)
@@ -16,10 +19,19 @@ def gen_cost_func(P, Q):
     return cost
 
 def main():
-    data_cam = pd.read_csv('plane_normals_and_intersection_cam.csv', index_col=0)
-    data_pcd = pd.read_csv('plane_normals_and_intersection_pcd.csv', index_col=0)
-    source = data_pcd.to_numpy()
-    target = data_cam.to_numpy()
+
+    parser = argparse.ArgumentParser(description="Solve transfromation via normal and intersection constraints.")
+    parser.add_argument('--source', type=str, default='../data/output/plane_normals_and_intersection_pcd.csv',
+                        help="csv file containing normals and intersections in source frame.")
+    parser.add_argument('--target', type=str, default='../data/output/plane_normals_and_intersection_cam.csv',
+                        help="csv file containing normals and intersections in target frame.")
+    parser.add_argument('--output_file', type=str, default='../data/output/calib_result.csv',
+                        help="csv file containing normals and intersections in target frame.")
+
+    args = parser.parse_args()
+    target = pd.read_csv(args.target, index_col=0).to_numpy()
+    source = pd.read_csv(args.source, index_col=0).to_numpy()
+
     print('round robin dot product between normals:')
     normal_source = source[0:3].T
     normal_target = target[0:3].T
@@ -51,7 +63,9 @@ def main():
     print('translation (x, y, z):', t)
     output = np.append(t, rot_quat)
     df = pd.DataFrame(data=np.expand_dims(output, axis=0), columns=['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw'])
-    df.to_csv('calib_result_pcd_to_cam.csv')
+    df.to_csv(args.output_file, index=False)
+
+    print('Result is saved to %s'%(args.output_file))
 
 if __name__ == '__main__':
     main()

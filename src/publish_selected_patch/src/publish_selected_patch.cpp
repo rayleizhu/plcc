@@ -125,7 +125,7 @@ int PublishSelectedPatch::processKeyEvent( QKeyEvent* event, rviz::RenderPanel* 
     cnt++;
     ROS_INFO("Publishing new selected patch with %d points, index: %d", num_points, this->cnt);
     ofstream pcd_csv;
-    string fname = "selected_pcd_patch_"+to_string(this->cnt)+".csv";
+    string fname = "data/output/pcd_patches/selected_pcd_patch_"+to_string(this->cnt)+".csv";
     pcd_csv.open(fname, ios::out);
     pcd_csv<<'x'<<','<<'y'<<','<<'z'<<endl;
     //TODO: publish pcd with intensity information

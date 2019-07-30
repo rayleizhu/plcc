@@ -35,12 +35,12 @@ class Camera:
         return coord
         
 intr = np.array([1361.3861083984375, 0.0, 949.724853515625, 0.0, 1361.753173828125, 545.7684936523438, 0.0, 0.0, 1.0]).reshape(3, 3)
-extr_csv = 'calib_result_pcd_to_cam.csv'
-extr = pd.read_csv(extr_csv, index_col=0).to_numpy()[0]
+extr_csv = '../data/output/calib_result_pcd_to_cam.csv'
+extr = pd.read_csv(extr_csv).to_numpy()[0]
 rot = R.from_quat(extr[3:]).as_dcm()
 t = extr[0:3]
 
-img = cv2.imread('orig.png')
+img = cv2.imread('../data/output/orig.png')
 
 csv_file_list = ['selected_pcd_patch_%d.csv'%i for i in range(1, 4) ]
 pt_size = 3

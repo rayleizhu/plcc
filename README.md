@@ -17,6 +17,7 @@ It's recommended to use conda virtual environment:
 
 ```
 conda create -n plcc python=3.6
+conda activate plcc
 conda install --yes --file requirements.txt 
 ```
 
@@ -32,6 +33,8 @@ source devel/setup.bash
 mkdir -p data/output/pcd_patches data/input
 ```
 
-Then you can start rviz to select point cloud patches. Note that, if you want reset patch count which is set for csv file name generation, you need to restart rviz. 
+Then you can start rviz to select point cloud patches. Note that,  
+1. if you want reset patch count which is set for csv file name generation, you need to restart rviz.
+2. there may be confilct between conda envs and ros envs, you may need to deactivate conda envs before you run rviz.
 
 ### use python scripts to solve transformation

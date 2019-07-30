@@ -11,7 +11,7 @@ def main():
     """Extract a folder of images from a rosbag.
     """
     parser = argparse.ArgumentParser(description="Extract images from a ROS bag.")
-    parser.add_argument("--bag_file", default='/home/rayleizhu/Data/LidarCamCalib/data7_26/20190726_data6.bag',
+    parser.add_argument("--bag_file", default='../data/input/data7_26/20190726_data6.bag',
                         help="Input ROS bag.")
     parser.add_argument("--output_file", default='../data/output/orig.png', help="Output file path.")
     parser.add_argument("--image_topic", default='/ged32/image/front', help="Image topic.")

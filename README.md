@@ -34,7 +34,7 @@ mkdir -p data/output/pcd_patches data/input
 ```
 
 Then you can start rviz to select point cloud patches. Note that,  
-1. if you want reset patch count which is set for csv file name generation, you need to restart rviz.
+1. if you want to reset patch count which is set for csv file name generation, you need to restart rviz.
 2. there may be confilct between conda envs and ros envs, you may need to deactivate conda envs before you run rviz.
 
 ### use python scripts to solve transformation

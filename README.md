@@ -27,7 +27,7 @@ pip3 install -r requirements.txt
 
 ### use rviz plugin to select point cloud patches
 
-````
+```
 source devel/setup.bash
 mkdir -p data/output/pcd_patches data/input
 ```

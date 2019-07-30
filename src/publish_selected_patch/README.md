@@ -2,9 +2,8 @@
 
 ## usage
 
-ALT: moving mode
-SHIFT: add mode
-CTRL: remove mode
-
-F: focus on selected
-P: pushlish patch
+ALT: moving mode  
+SHIFT: add mode  
+CTRL: remove mode  
+F: focus on selected  
+P: pushlish patch  

@@ -1,0 +1,21 @@
+%YAML 1.0
+---
+# Camera: front
+# Date: 6.28.2019
+# Final reprojection error: 0.369 pixels
+model_type: MEI
+camera_name: camera
+image_width: 636
+image_height: 480
+mirror_parameters:
+   xi: 2.1637135324762999e+00
+distortion_parameters:
+   k1: -1.1248071369175525e-01
+   k2: 6.8792346775196311e-01
+   p1: -5.4897293395787024e-04
+   p2: -2.0998221527847034e-04
+projection_parameters:
+   gamma1: 7.6540568464864702e+02
+   gamma2: 7.6524690518839486e+02
+   u0: 3.3169481806257528e+02
+   v0: 2.1919031802800069e+02

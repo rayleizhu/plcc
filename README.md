@@ -38,3 +38,9 @@ Then you can start rviz to select point cloud patches. Note that,
 2. there may be confilct between conda envs and ros envs, you may need to deactivate conda envs before you run rviz.
 
 ### use python scripts to solve transformation
+```
+cd scripts
+python fit_plane_in_pcd.py
+
+... ...
+```

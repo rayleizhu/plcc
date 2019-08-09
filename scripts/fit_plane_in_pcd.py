@@ -4,12 +4,10 @@
 import numpy as np
 from sklearn.decomposition import PCA
 import pandas as pd
-from mayavi import mlab
 import copy
 import scipy
-
-import argparse
 import os
+
 
 class Plane3D:
     def __init__(self, normal=np.zeros(3), center=np.zeros(3)):
@@ -18,10 +16,8 @@ class Plane3D:
         self.fitted = False
         if (normal != np.zeros(3)).all():
             self.fitted = True
-        self.pcd = None
-
+        
     def fit(self, pcd, verbose=False):
-        self.pcd = pcd
         pca = PCA(n_components=3)
         pca.fit(pcd)
         self.center = np.mean(pcd, axis=0)
@@ -34,6 +30,7 @@ class Plane3D:
             print("pcd center:", self.center)
             print("normal:", pca.components_[-1])
         self.fitted = True
+        return self
 
     def get_parameter(self, mode='p-n'):
         assert mode in ['p-n', 'coeff']
@@ -61,7 +58,7 @@ class Ransac:
         self.inlier_th = inlier_th
         self.num_inliers_th = num_inliers_th
 
-    def run(self, data, model, verbose=False, return_all=False):
+    def run(self, model, data, verbose=False, return_all=True):
         iterations = 0
         best_model = None
         best_err = np.inf
@@ -112,7 +109,7 @@ class Ransac:
         if best_model is None:
             raise ValueError("Did not meet acceptance criteria.")
         if return_all:
-            return best_model, best_inliner_idxs
+            return best_model, data[best_inliner_idxs, :]
         else:
             return best_model
                 
@@ -127,85 +124,127 @@ def statistical_outilier_removal(data, k=8, z_max=2):
     sor_filter = abs(z_distances) < z_max
     return data[sor_filter]
 
-def main():
+
+def get_tag_plane_in_pcd_frame(pts, sor=True, ransac=False, verbose=False):
+    """
+    args:
+        pts: ndarray of shape (n, 3), points in the plane
+        sor: flag for using statistical outlier filter, recommended to turn on
+        ransac: flag for using RANSAC, NOT recommened to turn on, since it's not stable
+        verbose: flag for verbose output
+    return:
+        coeff: coefficent array [n.x, n.y, n.z, d]
+    """
+    if args.sor == True:
+        # TODO: user control on filter condition
+        pts = statistical_outilier_removal(pts, k=10, z_max=2)
+    if args.ransac == True:
+        plane, inliers = Ransac(0.5, 100, 1e-3, 0.9).run(Plane3D(), pts, verbose=verbose)
+    else:
+        inliers = pts
+        plane = Plane3D().fit(pts, verbose=verbose)
+    coeff = plane.get_parameter(mode='coeff')
+    return coeff, inliers
+
+if __name__ == '__main__':
+
+    from mayavi import mlab
+    import argparse
+    import utility
+
     parser = argparse.ArgumentParser(description="Fit planes with point cloud patches.")
-    parser.add_argument('--input_dir', type=str, default='../data/output/pcd_patches',
+    parser.add_argument('-i', '--input', type=str, default='../data/output/pcd_patches',
                         help="The directory including point cloud patches.")
-    parser.add_argument('--output_file', type=str, default='../data/output/plane_normals_and_intersection_pcd.csv',
+    parser.add_argument('-o', '--output', type=str, default='../data/output/planes_pcd.csv',
                         help="Where to put the result.")
     parser.add_argument('--no-sor', dest='sor', action='store_false', help='Disable statistical outlier removal.')
     parser.add_argument('--ransac', dest='ransac', action='store_true', help='Enable RANSAC for plane fitting.')
-    parser.add_argument('--verbose', dest='verbose', action='store_true', help='Output verbosely')
+    parser.add_argument('-q', '--quiet', dest='verbose', action='store_false',
+                         help='Silent mode')
+    parser.add_argument('--no-vis', dest='vis', action='store_false', help='Disable visualization')
+    parser.add_argument('-c', '--cos-th', type=float, default=0.85,
+                        help='acceptance threshold for intersection.')
 
     parser.set_defaults(sor=True)
     parser.set_defaults(ransac=False)
-    parser.set_defaults(verbose=False)
+    parser.set_defaults(verbose=True)
+    parser.set_defaults(vis=True)
 
     args = parser.parse_args()
 
-    # TODO: multiple planes
     #csv_file_list = [ 'selected_pcd_patch_%d.csv'%i for i in range(1, 4) ]
-    csv_file_list = [ os.path.join(args.input_dir, 'selected_pcd_patch_%d.csv'%i) for i in range(1, 4) ]
+    csv_name_list = os.listdir(args.input)
+    csv_name_list.sort()
+    if args.verbose:
+        print('Point cloud patch csv files:\n', csv_name_list)
+        print('---------------------------------------------------')
+    csv_file_list = [ os.path.join(args.input, csv_name) for csv_name in csv_name_list ]
+    num_planes = len(csv_file_list)
 
-    n_list = []
-    c_list = [] 
+    plane_list = []
+    inliers_list = []
     for i, csv in enumerate(csv_file_list):
-        pts = pd.read_csv(csv).to_numpy()
-
         if args.verbose:
             print('--------Fitting plane %d---------'%i)
+        pts = pd.read_csv(csv).to_numpy()
+        coeff, inliers = get_tag_plane_in_pcd_frame(pts,
+                                                    sor=args.sor,
+                                                    ransac=args.ransac,
+                                                    verbose=args.verbose)
+        # It's assumed that, x axis points towards the positive side of plane
+        if coeff[0] > 0:
+            coeff = -coeff
+        plane_list.append(coeff)
+        inliers_list.append(inliers)
+        if args.verbose:
+            print('---------------------------------------------------')
 
-        if args.sor == True:
-            # TODO: user control on filter condition
-            pts = statistical_outilier_removal(pts, k=10, z_max=2)
-        if args.ransac == True:
-            plane = Ransac(0.5, 100, 1e-3, 0.9).run(pts, Plane3D(), verbose=args.verbose)
-        else:
-            plane = Plane3D()
-            plane.fit(pts, verbose=args.verbose)
+    index = ['tag{:02d}'.format(i) for i in range(len(plane_list))]
+    utility.save_planes(plane_list, index, args.output)
 
-        n, center = plane.get_parameter()
-        # TODO: Visualize both inliers and outliers?
-        pts = plane.pcd
-
-        # FIXME: the normal direction of planes
-        if n[0] > 0:
-            n = -n
-        n_list.append(n)
-        c_list.append(np.dot(n, center))
-
-        # TODO: more robust visualization
-        def f(x, y):
-            return (np.dot(n, center) - n[0]*x - n[1]*y)/n[2]
-        
-        s = 0.1
-        x_min = np.min(pts[:, 0]) - s
-        y_min = np.min(pts[:, 1]) - s
-        x_max = np.max(pts[:, 0]) + s
-        y_max = np.max(pts[:, 1]) + s
-        xx, yy = np.mgrid[x_min:x_max:0.01, y_min:y_max:0.01]
-        color=tuple([1. if j==i else 0. for j in range(3)])
-        mlab.surf(xx, yy, f, color=color, opacity=0.5)
-        mlab.points3d(pts[:, 0], pts[:, 1], pts[:, 2], 
-                     color=color)
-
-    N = np.stack(n_list)
-    c = np.stack(c_list)
-    intersection = np.dot(np.linalg.inv(N), c)
-    mlab.points3d([intersection[0]], [intersection[1]], [intersection[2]], scale_factor=0.03)
-    mlab.show()
-
-
-    if not os.path.exists(os.path.dirname(args.output_file)):
-        os.makedirs(os.path.dirname(args.output_file))
-
-    df = pd.DataFrame(np.concatenate([N, intersection[np.newaxis, :]], axis=0),
-                      columns=['x', 'y', 'z'],
-                      index=['normal_1', 'normal_2', 'normal_3', 'intersection'])
-    df.to_csv(args.output_file)
+    res_list = utility.get_all_intersections(plane_list, cos_th=args.cos_th)
+    valid_intersec_list = []
+    for res in res_list:
+        if res[0]:
+            valid_intersec_list.append(res[1])
+    if not valid_intersec_list:
+        print('====================================================\n'
+              '+        WARNING: No valid intersection point:     +\n'
+              '+ please make sure intersection angles between tag +\n'
+              '+       planes are not too large or too small.     +\n'
+              '====================================================')
 
     if args.verbose:
-        print('Result is stored to %s' % args.output_file)
+        print('---------------------------------------------------')
+        print('Coefficient array [n.x, n.y, n.z, d] of tag planes:')
+        for i in range(num_planes):
+            print('tag{:02d}:'.format(i), plane_list[i])
+        print('Result is stored to %s' % args.output)
+        print('---------------------------------------------------')
+        print('Intersections:')
+        [print(res) for res in res_list]
 
-if __name__ == '__main__':
-    main()
+    if args.vis:
+        red_ext = np.linspace(0, 1, num=num_planes)
+        color_map = [(red_ext[i], 0, 1-red_ext[i]) for i in range(num_planes)]
+        slack = 0.01
+        surf_list = []
+        for i in range(num_planes):
+            bound_min = np.min(inliers_list[i], axis=0) - slack
+            bound_max = np.max(inliers_list[i], axis=0) + slack
+            surf_list += utility.visualize_planes([plane_list[i]], bound_min, bound_max, [color_map[i]])
+            # TODO: Visualize both inliers and outliers?
+            mlab.points3d(inliers_list[i][:, 0],
+                          inliers_list[i][:, 1],
+                          inliers_list[i][:, 2], 
+                          color=color_map[i])
+        
+        
+        if valid_intersec_list:
+            valid_intersec = np.stack(valid_intersec_list)
+            mlab.points3d(valid_intersec[:, 0], valid_intersec[:, 1], valid_intersec[:, 2],
+                        scale_factor=0.03,
+                        opacity=1.0,
+                        color=(0., 0., 0.))
+
+        mlab.show()

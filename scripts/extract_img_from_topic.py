@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import argparse
 
@@ -25,7 +26,7 @@ def main():
         cv_img = bridge.imgmsg_to_cv2(msg, 'bgr8')
 
         cv2.imwrite(args.output_file, cv_img)
-        print "Image has been written to %s" % args.output_file
+        print("Image has been written to %s" % args.output_file)
         break
 
     bag.close()

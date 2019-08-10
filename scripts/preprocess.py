@@ -7,6 +7,8 @@ import cv2
 import rosbag
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
+
+from scipy.spatial.transform import Rotation as R
 import numpy as np
 
 def get_img_from_rosbag(bag_file, img_topic, mode='single'):
@@ -32,11 +34,21 @@ def get_img_from_rosbag(bag_file, img_topic, mode='single'):
 
     return img_list
 
-def get_extr_cam_from_rosbag(bag_file, tag_names, mode='cam2tag'):
+def get_tag_cam_tf_from_rosbag(bag_file, tag_names, mode='tag2cam'):
+    """
+    args:
+        bag_file: path to bag file
+        tag_names: a list of tag name
+        mode: 'tag2cam' or 'cam2tag'. 'tag2cam' means p_cam = Transform(p_tag; tf)
+            for returned tf. Such tf is the original output of Apriltag detection
+            package. 'cam2tag' means the reverse tf.
+    return:
+        a dictionary of transformation where the keys are tag names in tag_names
+    """
     assert mode in ['cam2tag', 'tag2cam']
     bag = rosbag.Bag(bag_file, 'r')
 
-    tf_list = []
+    tf_dict = {tag:[] for tag in tag_names}
     for topic, msg, t in rosbag.Bag(bag_file).read_messages(topics=['/tf']):
         if msg.transforms[0].child_frame_id in tag_names:
             x = msg.transforms[0].transform.translation.x
@@ -46,29 +58,61 @@ def get_extr_cam_from_rosbag(bag_file, tag_names, mode='cam2tag'):
             ry = msg.transforms[0].transform.rotation.y
             rz = msg.transforms[0].transform.rotation.z
             rw = msg.transforms[0].transform.rotation.w
-            t = np.array([x, y, z])
-            r_quat = np.array([rx, ry, rz, rw])
-            print(t, r_quat)
-            tf_list.append((r_quat, t))
-            
-    return tf_list
+            if mode == 'tag2cam':
+                tf = np.array([x, y, z, rx, ry, rz, rw])
+            else:
+                rot_mat = R.from_quat(np.array(rx, ry, rz, rw)).as_dcm().T
+                t = -np.dot(rot_mat, np.array([x, y, z]))
+                r_quat = R.from_dcm(rot_mat).as_quat()
+                tf = np.concatenate([t, r_quat], axis=0)
+            tf_dict[msg.transforms[0].child_frame_id].append(tf)
+    for key in tf_dict:
+        if not tf_dict[key]:
+            raise ValueError('Transformation for {} not found'.format(key))
+            #tf_dict[key] = np.zeros(7)
+        else:
+            # TODO: ourlier removal?
+            tf_dict[key] = np.mean(np.stack(tf_dict[key]), axis=0)
+
+    return tf_dict
 
 if __name__ == '__main__':
+    import pandas as pd
 
     parser = argparse.ArgumentParser(description="Extract image and transformation from camera to tags from rosbag.")
+    parser.add_argument('ntag', type=int, 
+                    help='Number of tags')
     parser.add_argument('-i', '--input', type=str, default='../data/input/data.bag',
                         help="Input ROS bag.")
-    parser.add_argument('ntag', type=int, 
-                        help='Number of tags')
-    parser.add_argument('-t', '--img-topic', type=str, default='/zed/zed_node/left_raw/image_raw_color',
+    parser.add_argument('-t', '--img-topic', type=str, default='/zed/zed_node/left/image_rect_color',
                         help="Image topic.")
     parser.add_argument('-m', '--oimg', type=str, default='../data/output/orig.png',
                         help="Path for saving extracted image.")
-    parser.add_argument('-f', '--otfm', type=str, default='../data/output/tf_cam_to_tag.csv',
+    parser.add_argument('-f', '--otfm', type=str, default='../data/output/tf_tag_to_cam.csv',
                         help="Path for saving transformation file.")
 
+    parser.add_argument('-q', '--quiet', dest='verbose', action='store_false',
+                         help='Silent mode')
+    parser.set_defaults(verbose=True)
     args = parser.parse_args()
 
-    #img = get_img_from_rosbag(args.input, args.img_topic, mode='single')
+    # TODO: repair image extraction issue (cv_bridge)
+    # img = get_img_from_rosbag(args.input, args.img_topic, mode='single')[0]
+    # cv2.imwrite(args.oimg, img)
+
     tag_names = ['tag_{:d}'.format(i) for i in range(args.ntag)]
-    tf_list = get_extr_cam_from_rosbag(args.input, tag_names, mode='cam2tag')
+    tf_dict = get_tag_cam_tf_from_rosbag(args.input, tag_names, mode='tag2cam')
+    tf_list = []
+    for tag in tag_names:
+        tf_list.append(tf_dict[tag])
+    tf_array = np.stack(tf_list)
+    df = pd.DataFrame(tf_array, index=tag_names,
+                      columns=['t.x', 't.y', 't.z', 'r.x', 'r.y', 'r.z', 'r.w'])
+    df.to_csv(args.otfm)
+
+    if args.verbose:
+        print('Extracted image and cam-tag transformation from {}.'.format(args.input))
+        [print('{}:{}'.format(tag, tf_dict[tag])) for tag in tag_names]
+        print('Image saved to {}'.format(args.oimg))
+        print('Transformation saved to {}'.format(args.otfm))
+

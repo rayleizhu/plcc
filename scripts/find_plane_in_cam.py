@@ -6,7 +6,7 @@ from scipy.spatial.transform import Rotation as R
 import numpy as np
 import os
 
-def get_tag_plane_in_cam_frame(r, t, direction='cam2tag'):
+def get_tag_plane_in_cam_frame(r, t, direction='tag2cam'):
     """
     args:
         r: np.ndarray, 3*3 rotation matrix
@@ -27,12 +27,12 @@ def get_tag_plane_in_cam_frame(r, t, direction='cam2tag'):
     return np.append(n, d)
 
 def get_tfm_from_csv(csv_path):
-    df = pd.read_csv(csv_path).to_numpy()
+    df = pd.read_csv(csv_path, index_col=0).to_numpy()
     r_list = []
     t_list = []
     for i in range(len(df)):
         t = df[i, 0:3]
-        quat = np.append(df[i, 4:7], df[i, 3])
+        quat = df[i, 3:]
         r = R.from_quat(quat).as_dcm()
         t_list.append(t)
         r_list.append(r)
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     from mayavi import mlab
 
     parser = argparse.ArgumentParser(description="Find planes in camera frame.")
-    parser.add_argument('-i', '--input', type=str, default='../data/output/tf_cam_to_tag.csv',
+    parser.add_argument('-i', '--input', type=str, default='../data/output/tf_tag_to_cam.csv',
                         help="Input file including transformations from tag frame to camera frame.")
     parser.add_argument('-o', '--output', type=str, default='../data/output/planes_cam.csv',
                         help="Where to put the result.")
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     num_planes = len(r_list)
     coeff_list = []
     for i in range(num_planes):
-        coeff = get_tag_plane_in_cam_frame(r_list[i], t_list[i])
+        coeff = get_tag_plane_in_cam_frame(r_list[i], t_list[i], direction='tag2cam')
         coeff_list.append(coeff)
 
     utility.save_planes(coeff_list, 

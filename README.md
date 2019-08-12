@@ -13,17 +13,9 @@ catkin_make install
 ```
 
 ### install python dependencies
-It's recommended to use conda virtual environment:
 
 ```
-conda create -n plcc python=3.6
-conda activate plcc
-conda install --yes --file requirements.txt 
-```
-
-Or if you want to use pip:
-```
-pip3 install -r requirements.txt
+pip2 install -r requirements.txt
 ``` 
 
 ### use rviz plugin to select point cloud patches
@@ -35,7 +27,7 @@ mkdir -p data/output/pcd_patches data/input
 
 Then you can start rviz to select point cloud patches. Note that,  
 1. if you want to reset patch count which is set for csv file name generation, you need to restart rviz.
-2. there may be confilct between conda envs and ros envs, you may need to deactivate conda envs before you run rviz.
+2. if you use conda environment, there may be conflict between conda envs and ros envs.
 
 ### use python scripts to solve transformation
 ```

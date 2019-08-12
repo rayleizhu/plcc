@@ -1,7 +1,20 @@
+from __future__ import print_function
+
 from mayavi import mlab
 import os
 import pandas as pd
 import numpy as np
+
+def get_color_map(n, mode='rgb'):
+    assert mode in ['rgb', 'bgr']
+    intens = np.linspace(0, 1, num=n)
+    if mode == 'rgb':
+        color_map = [(intens[i], 0, 1-intens[i]) for i in range(n)]
+    elif mode == 'bgr':
+        color_map = [(1-intens[i], 0, intens[i]) for i in range(n)]
+    else:
+        raise ValueError("only support 'rgb' or 'bgr' as mode!")
+    return color_map
 
 def visualize_planes(coeff_list, bound_min, bound_max, color_map=None):
     """
@@ -15,9 +28,7 @@ def visualize_planes(coeff_list, bound_min, bound_max, color_map=None):
     # FIXME: plane parallel to z axis
     #https://stackoverflow.com/questions/53115276/matplotlib-how-to-draw-a-vertical-plane-in-3d-figure
     if color_map is None:
-        red_ext = np.linspace(0, 1, num=len(coeff_list))
-        blue_ext = 1 - red_ext
-        color_map = [(red_ext[i], 0, blue_ext[i]) for i in range(len(coeff_list))]
+        color_map = get_color_map(len(coeff_list))
     surf_list = []
     for i, coeff in enumerate(coeff_list):
         def zz(x, y):

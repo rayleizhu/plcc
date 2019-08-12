@@ -5,17 +5,21 @@ import numpy as np
 import cv2
 from scipy.spatial.transform import Rotation as R
 import pandas as pd
-import mei_model
 
 class Camera:
-    def __init__(self, intr, cam_model='pinhole', **kwargs):
-        """
-        args:
-            intr: [3, 3] intrisic matrix
-        """
-        assert cam_model in ['pinhole', 'mei']
-        self.intr = intr
-        self.cam_model = cam_model
+    def __init__(self, **kwargs):
+        self.model_type = kwargs['model_type']
+        assert self.model_type in ['PINHOLE', 'MEI']
+        if self.model_type == 'PINHOLE':
+            p = kwargs['projection_parameters']
+            self.intr = np.array([[p['fx'], 0, p['cx']],
+                                  [0, p['fy'], p['cy']],
+                                  [0, 0, 1]])
+            d = kwargs['distortion_parameters']
+            self.dist = (d['k1'], d['k2'], d['p1'], d['p2'])
+        #TODO: add 'MEI' model
+        else:
+            pass
 
     def project_pts(self, pts):
         """
@@ -24,82 +28,95 @@ class Camera:
         return:
             coord: (n, 2) np array
         """
-        if self.cam_model == 'pinhole':
+        if self.model_type == 'PINHOLE':
             pts_cam_front = pts[pts[:, 2] > 1e-3]  # z > 0
-            print(pts_cam_front)
-            coord_hom = np.dot(intr, pts_cam_front.T).T
+            coord_hom = np.dot(self.intr, pts_cam_front.T).T
             coord = coord_hom[:, 0:2] / np.expand_dims(coord_hom[:, 2], 1)
-            # print(coord)
             coord = coord.astype(int)
-            # print(coord)
-        elif self.cam_model == 'mei':
-            pts_cam_front = pts[pts[:, 2] > 1e-3]  # z > 0
-            m_params = intr
-            coord = mei_model.space_to_plane_mei(pts_cam_front, m_params)  # image point coordinates
-            print(coord)
-            coord = coord.astype(int)
+            # TODO: consider distortion
+        elif self.model_type == 'MEI':
+            pass
         else:
-            raise NotImplementedError("Camera model %s is not implemented!" % (self.cam_model))
+            raise NotImplementedError("Camera model {} is not implemented!".format(self.model_type))
         return coord
 
 
-# intr = np.array([1361.3861083984375, 0.0, 949.724853515625, 0.0, 1361.753173828125, 545.7684936523438, 0.0, 0.0, 1.0]).reshape(3, 3)
-m_params = mei_model.read_yaml_file()
-print(m_params)
-m_inv_params = mei_model.mei_model_camera_constructor(m_params)  # 构造mei模型
-print(m_inv_params)
-intr = m_params
-# intr = np.array([m_params['m_gamma1'], 0.0, m_params['m_u0'], 0.0, m_params['m_gamma2'], m_params['m_v0'], 0.0, 0.0, 1.0]).reshape(3, 3)
+def get_reprojection_img(orig_img, camera, pts_cam, color, pt_size=3):
+    """
+    args:
+        orig_img: cv2 image (ndarray)
+        camera: Camera object
+        pts_cam: (n, 3) ndarray. coordinates of points in camera frame
+    return:
+        reprojected image
+    """
+    coord = camera.project_pts(pts_cam)
+    for i in range(len(coord)):
+        cv2.circle(img, (coord[i][0], coord[i][1]), pt_size, color, thickness=-1)
+    return img
 
 
-extr_csv = '../data/output/calib_result.csv'
-extr = pd.read_csv(extr_csv).to_numpy()[0]
-rot = R.from_quat(extr[3:]).as_dcm()
-t = extr[0:3]
+if __name__ == '__main__':
+    import argparse
+    import os
+    import utility
+    import yaml
 
-img = cv2.imread('../data/output/orig.png')
+    parser = argparse.ArgumentParser(description="Reproject point cloud and intersections to image")
+    parser.add_argument('-p', '--pcd', type=str, default='../data/output/pcd_patches',
+                        help="The diitscrectory containing point cloud patches.")
+    parser.add_argument('-i', '--itsc', type=str, default='../data/output/intersections_pcd.csv',
+                        help="csv file containing intersection points.")
+    parser.add_argument('-m', '--img', type=str, default='../data/output/orig.png',
+                        help="csv file containing intersection points.")
+    parser.add_argument('-t', '--tfm', type=str, default='../data/output/calib_result.csv',
+                        help='csv file containing transformation from point cloud to camera')
+    parser.add_argument('-c', '--cam', type=str, default='../data/output/camera_info.yaml',
+                        help="The camera parameter file.")
+    parser.add_argument('-o', '--output', type=str, default='../data/output/reprojection.png',
+                        help="Path for output result.")
+    parser.add_argument('-q', '--quiet', dest='verbose', action='store_false',
+                         help='Silent mode')
+    parser.set_defaults(verbose=True)
+    args = parser.parse_args()
 
-csv_file_list = ['../data/output/pcd_patches/selected_pcd_patch_%d.csv' % i for i in range(1, 4)]
-pt_size = 3
-color_ls = [(255 * (i == 2), 255 * (i == 1), 255 * (i == 0)) for i in range(3)]
+    extr = pd.read_csv(args.tfm).to_numpy()[0]
+    rot = R.from_quat(extr[3:]).as_dcm()
+    t = extr[0:3]
 
+    img = cv2.imread(args.img)
+    pcd_csv_ls = [ os.path.join(args.pcd, fname) for fname in os.listdir(args.pcd) ]
 
-def proj(pts_pcd, rot, t, intr):
-    pts_cam = (np.dot(rot, pts_pcd.T) + np.expand_dims(t, 1)).T
-    pts_cam_front = pts_cam[pts_cam[:, 2] > 1e-3]  # z > 0
-    coord_hom = np.dot(intr, pts_cam_front.T).T
-    coord = coord_hom[:, 0:2] / np.expand_dims(coord_hom[:, 2], 1)
-    coord = coord.astype(int)
-    return coord
+    # default image channel order is 'bgr' in opencv
+    color_ls = utility.get_color_map(len(pcd_csv_ls), mode='bgr')
 
+    with open(args.cam, 'r') as stream:
+        dct = yaml.safe_load(stream)
 
-cam = Camera(intr, cam_model='mei')
+    cam = Camera(**dct)
 
-# project point cloud
-for i, fname in enumerate(csv_file_list):
-    pts_pcd = pd.read_csv(fname).to_numpy()
-    pts_cam = (np.dot(rot, pts_pcd.T) + np.expand_dims(t, 1)).T
-    coord = cam.project_pts(pts_cam)
-    for j in range(len(coord)):
-        cv2.circle(img, (coord[j][0], coord[j][1]), pt_size, color_ls[i], thickness=-1)
+    # project point cloud
+    for i, fname in enumerate(pcd_csv_ls):
+        pts_pcd = pd.read_csv(fname).to_numpy()
+        pts_cam = (np.dot(rot, pts_pcd.T) + np.expand_dims(t, 1)).T
+        img = get_reprojection_img(img, cam, pts_cam, np.array(color_ls[i])*255)
 
-# print(coord)
+    # TODO: proejct intersections
+    # # project plane intersection of lidar frame
+    # intersec_pcd = pd.read_csv('../data/output/plane_normals_and_intersection_pcd.csv', index_col=0).to_numpy()[-1]
+    # intersec_pcd_cam = np.dot(rot, intersec_pcd) + t
+    # intersec_pcd_cam = np.expand_dims(intersec_pcd_cam, axis=0)
+    # coord = cam.project_pts(intersec_pcd_cam)
+    # # coord = proj(intersec_pcd, rot, t, intr)
+    # print('pcd:', coord)
+    # cv2.circle(img, (coord[0][0], coord[0][1]), pt_size+2, (255, 255, 255), thickness=-1)
 
-# project plane intersection of lidar frame
-intersec_pcd = pd.read_csv('../data/output/plane_normals_and_intersection_pcd.csv', index_col=0).to_numpy()[-1]
-intersec_pcd_cam = np.dot(rot, intersec_pcd) + t
-intersec_pcd_cam = np.expand_dims(intersec_pcd_cam, axis=0)
-coord = cam.project_pts(intersec_pcd_cam)
-# coord = proj(intersec_pcd, rot, t, intr)
-print('pcd:', coord)
-cv2.circle(img, (coord[0][0], coord[0][1]), pt_size+2, (255, 255, 255), thickness=-1)
+    # # project plane intersection of camera frame
+    # intersec_cam = pd.read_csv('../data/output/plane_normals_and_intersection_cam.csv', index_col=0).to_numpy()[-1]
+    # intersec_cam = np.expand_dims(intersec_cam, axis=0)
+    # coord = cam.project_pts(intersec_cam)
+    # print('cam:', coord)
+    # cv2.circle(img, (coord[0][0], coord[0][1]), pt_size, (0, 0, 0), thickness=-1)
 
-# project plane intersection of camera frame
-intersec_cam = pd.read_csv('../data/output/plane_normals_and_intersection_cam.csv', index_col=0).to_numpy()[-1]
-intersec_cam = np.expand_dims(intersec_cam, axis=0)
-coord = cam.project_pts(intersec_cam)
-print('cam:', coord)
-cv2.circle(img, (coord[0][0], coord[0][1]), pt_size, (0, 0, 0), thickness=-1)
-
-# save reprojected image
-cv2.imwrite('../data/output/back_proj_res.png', img)
+    # save reprojected image
+    cv2.imwrite(args.output, img)

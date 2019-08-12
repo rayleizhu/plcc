@@ -1,5 +1,6 @@
 # Author: Zhu Lei
 # Email: leifzhu@foxmail.com
+from __future__ import print_function
 
 import numpy as np
 from sklearn.decomposition import PCA
@@ -225,8 +226,7 @@ if __name__ == '__main__':
         [print(res) for res in res_list]
 
     if args.vis:
-        red_ext = np.linspace(0, 1, num=num_planes)
-        color_map = [(red_ext[i], 0, 1-red_ext[i]) for i in range(num_planes)]
+        color_map = utility.get_color_map(num_planes)
         slack = 0.01
         surf_list = []
         for i in range(num_planes):

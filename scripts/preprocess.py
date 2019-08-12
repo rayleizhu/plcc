@@ -1,11 +1,10 @@
 from __future__ import print_function
 import os
-import argparse
-
 import cv2
 
 import rosbag
 from sensor_msgs.msg import Image
+from sensor_msgs.msg import CameraInfo
 from cv_bridge import CvBridge
 
 from scipy.spatial.transform import Rotation as R
@@ -76,8 +75,41 @@ def get_tag_cam_tf_from_rosbag(bag_file, tag_names, mode='tag2cam'):
 
     return tf_dict
 
+def get_cam_info_from_rosbag(bag_file, topic):
+    """
+    args:
+    return:
+    """
+    bag = rosbag.Bag(bag_file, 'r')
+    d = {}
+    for topic, msg, t in rosbag.Bag(bag_file).read_messages(topics=[topic]):
+        if msg.distortion_model == 'plumb_bob':
+            d['model_type'] = 'PINHOLE'
+            d['camera_name'] = msg.header.frame_id
+            d['image_width'] = msg.width
+            d['image_height'] = msg.height
+            K = msg.K
+            D = msg.D
+            d['distortion_parameters']={'k1':D[0],
+                                        'k2':D[1],
+                                        'p1':D[3],
+                                        'p2':D[4]}
+            d['projection_parameters']={'fx':K[0],
+                                        'fy':K[4],
+                                        'cx':K[2],
+                                        'cy':K[5]}
+
+        elif camera_type == 'MEI':
+            pass
+        else:
+            raise NotImplementedError('camera type {} not implemented yet'.format(camera_type))
+        break
+    return d
+
 if __name__ == '__main__':
     import pandas as pd
+    import argparse
+    import yaml
 
     parser = argparse.ArgumentParser(description="Extract image and transformation from camera to tags from rosbag.")
     parser.add_argument('ntag', type=int, 
@@ -86,10 +118,14 @@ if __name__ == '__main__':
                         help="Input ROS bag.")
     parser.add_argument('-t', '--img-topic', type=str, default='/zed/zed_node/left/image_rect_color',
                         help="Image topic.")
+    parser.add_argument('-c', '--cam-topic', type=str, default='/zed/zed_node/left/camera_info',
+                        help="camera info topic.")
     parser.add_argument('-m', '--oimg', type=str, default='../data/output/orig.png',
                         help="Path for saving extracted image.")
     parser.add_argument('-f', '--otfm', type=str, default='../data/output/tf_tag_to_cam.csv',
                         help="Path for saving transformation file.")
+    parser.add_argument('-y', '--ocam', type=str, default='../data/output/camera_info.yaml',
+                        help="Path for saving camera info ymal file.")
 
     parser.add_argument('-q', '--quiet', dest='verbose', action='store_false',
                          help='Silent mode')
@@ -97,8 +133,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # TODO: repair image extraction issue (cv_bridge)
-    # img = get_img_from_rosbag(args.input, args.img_topic, mode='single')[0]
-    # cv2.imwrite(args.oimg, img)
+    img = get_img_from_rosbag(args.input, args.img_topic, mode='single')[0]
+    cv2.imwrite(args.oimg, img)
 
     tag_names = ['tag_{:d}'.format(i) for i in range(args.ntag)]
     tf_dict = get_tag_cam_tf_from_rosbag(args.input, tag_names, mode='tag2cam')
@@ -110,9 +146,16 @@ if __name__ == '__main__':
                       columns=['t.x', 't.y', 't.z', 'r.x', 'r.y', 'r.z', 'r.w'])
     df.to_csv(args.otfm)
 
+    cam_info_dict = get_cam_info_from_rosbag(args.input, args.cam_topic)
+    with open(args.ocam, 'w') as stream:
+        yaml.safe_dump(cam_info_dict, stream, default_flow_style=False)
+    
     if args.verbose:
+        print('Camera info:')
+        print(cam_info_dict)
         print('Extracted image and cam-tag transformation from {}.'.format(args.input))
         [print('{}:{}'.format(tag, tf_dict[tag])) for tag in tag_names]
         print('Image saved to {}'.format(args.oimg))
         print('Transformation saved to {}'.format(args.otfm))
+        print('Camera info saved to {}'.format(args.ocam))
 

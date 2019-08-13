@@ -54,7 +54,7 @@ Topics:
 
 
 
-### Related projects
-[selected_points_publisher](https://github.com/tu-rbo/turbo-ros-pkg)  
-[camodocal](https://github.com/hengli/camodocal)  
-[apriltag_ros](https://github.com/AprilRobotics/apriltag_ros)  
+## 3. Related projects
+[selected_points_publisher](https://github.com/tu-rbo/turbo-ros-pkg): We refer to this repo to write our rviz plugin for point cloud patch selection.  
+[camodocal](https://github.com/hengli/camodocal): We use this repo to calibrate camera intrinsics. 
+[apriltag_ros](https://github.com/AprilRobotics/apriltag_ros): We use it to get camera-tag transformation.

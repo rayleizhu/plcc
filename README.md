@@ -1,10 +1,10 @@
 # PLCC
 Plane constraint based Lidar-Camera Calibration
 
-## Quick Start
+## 1. Quick Start
 We assume you have setup ROS enviroment.
 
-### One-click installation
+### 1.1 One-click installation
 
 ```
 git clone https://github.com/rayleizhu/plcc.git
@@ -12,21 +12,49 @@ cd plcc
 bash install.bash
 source devel/setup.bash
 ```
-
-### Use python scripts to solve transformation
-1. Put your recored bag file into data/input/data.bag
-2. Modify configurations in scripts/run_all.sh
-3. Run run_all.sh:
+### 1.2 Test with sample data
+We provided sample data`data/input/data.bag`, you can run a test by runing the following command
 ```
 cd scripts
-bash run_all.sh
+bash run_all.bash
+```
+When the script terminated, you can get results in the directory `data/output/`. Two import files are:  
+* calib_result.csv: containing calibration result (R, t) which is transformation from lidar to camera
+* reprojection.png: the reprojection result using calibrated realative transformation.
+
+Data directory structure after calibration:
+![assets/data_dir_tree.png](https://github.com/rayleizhu/plcc/assets/data_dir_tree.png "Directory structure")
+
+
+Example of reprojected result:
+![data/output/reprojection.png](https://github.com/rayleizhu/plcc/data/output/reprojection.png "reprojection result sample")
+
+
+## 2. Run calibration with your own data
+
+### 2.1 Procedures 
+1. Replace the sample data `data/input/data.bag` with your own recorded bag file. Refer to part 2.2 for requirement of the ROS bag file.
+2. Modify configurations in scripts/run_all.sh
+3. Run the following commands
+```
+cd scripts
+bash run_all.bash
 ```
 
-Note that,  
-1. if you want to reset patch count which is set for csv file name generation, you need to restart rviz.
-2. if you use conda environment, there may be conflict between conda envs and ros envs
+### 2.2 Requirement
+You can use `rosbag info data/input/data.bag` to figure out how should the input bag should be like: 
+
+![assets/data_bag_info.png](https://github.com/rayleizhu/plcc/assets/data_bag_info.png "Data bag ino")
+
+Topics:
+* /tf: should containing transformations from each tag to camera. You can use [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros) to achieve this goal.  
+* /velodyne_points: the topic containing point cloud. The name of this topic is depend on the sensor you are using. Importantly, you need to change `PCD_FRAME` in `run_all.bash` corrspondingly as the frame point cloud resides in.
+* /zed/zed_node/left/image_rect_color: the topic containing images camera shot. Corresponding variable in `run_all.bash` is `IMG_TOPIC`.
+* /zed/zed_node/left/camera_info: the topic containing images camera information (intrinsics, etc.). Corresponding variable in `run_all.bash` is `CAM_TOPIC`.
+
+
 
 ### Related projects
-[selected_points_publisher](https://github.com/tu-rbo/turbo-ros-pkg)
-[camodocal](https://github.com/hengli/camodocal)
-[apriltag_ros](https://github.com/AprilRobotics/apriltag_ros)
+[selected_points_publisher](https://github.com/tu-rbo/turbo-ros-pkg)  
+[camodocal](https://github.com/hengli/camodocal)  
+[apriltag_ros](https://github.com/AprilRobotics/apriltag_ros)  

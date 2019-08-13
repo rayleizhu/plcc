@@ -42,7 +42,7 @@ bash run_all.bash
 ```
 
 ### 2.2 Requirement
-You can use `rosbag info data/input/data.bag` to figure out how should the input bag should be like: 
+You can use `rosbag info data/input/data.bag` to figure out how the input bag should be like: 
 
 ![data_bag_info.png](https://github.com/rayleizhu/plcc/blob/master/assets/data_bag_info.png "Data bag ino")
 

@@ -1,47 +1,14 @@
 # Author: Zhu Lei
 # Email: leifzhu@foxmail.com
 
+from __future__ import print_function
 import numpy as np
 import cv2
 from scipy.spatial.transform import Rotation as R
 import pandas as pd
+import camera_model
 
-class Camera:
-    def __init__(self, **kwargs):
-        self.model_type = kwargs['model_type']
-        assert self.model_type in ['PINHOLE', 'MEI']
-        if self.model_type == 'PINHOLE':
-            p = kwargs['projection_parameters']
-            self.intr = np.array([[p['fx'], 0, p['cx']],
-                                  [0, p['fy'], p['cy']],
-                                  [0, 0, 1]])
-            d = kwargs['distortion_parameters']
-            self.dist = (d['k1'], d['k2'], d['p1'], d['p2'])
-        #TODO: add 'MEI' model
-        else:
-            pass
-
-    def project_pts(self, pts):
-        """
-        args:
-            pts: (n, 3) numpy array
-        return:
-            coord: (n, 2) np array
-        """
-        if self.model_type == 'PINHOLE':
-            pts_cam_front = pts[pts[:, 2] > 1e-3]  # z > 0
-            coord_hom = np.dot(self.intr, pts_cam_front.T).T
-            coord = coord_hom[:, 0:2] / np.expand_dims(coord_hom[:, 2], 1)
-            coord = coord.astype(int)
-            # TODO: consider distortion
-        elif self.model_type == 'MEI':
-            pass
-        else:
-            raise NotImplementedError("Camera model {} is not implemented!".format(self.model_type))
-        return coord
-
-
-def get_reprojection_img(orig_img, camera, pts_cam, color, pt_size=3):
+def get_reprojection_img(orig_img, camera, pts_cam, color, pt_size=1):
     """
     args:
         orig_img: cv2 image (ndarray)
@@ -50,10 +17,10 @@ def get_reprojection_img(orig_img, camera, pts_cam, color, pt_size=3):
     return:
         reprojected image
     """
-    coord = camera.project_pts(pts_cam)
+    coord = camera.space_to_plane(pts_cam)
     for i in range(len(coord)):
         cv2.circle(img, (coord[i][0], coord[i][1]), pt_size, color, thickness=-1)
-    return img
+    return img, coord
 
 
 if __name__ == '__main__':
@@ -65,8 +32,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Reproject point cloud and intersections to image")
     parser.add_argument('-p', '--pcd', type=str, default='../data/output/pcd_patches',
                         help="The diitscrectory containing point cloud patches.")
-    parser.add_argument('-i', '--itsc', type=str, default='../data/output/intersections_pcd.csv',
-                        help="csv file containing intersection points.")
+    parser.add_argument('--itsc-pcd', type=str, default='../data/output/intersection_src.csv',
+                        help="csv file containing intersection points in lidar frame.")
+    parser.add_argument('--itsc-cam', type=str, default='../data/output/intersection_tgt.csv',
+                        help="csv file containing intersection points in camera frame.")
     parser.add_argument('-m', '--img', type=str, default='../data/output/orig.png',
                         help="csv file containing intersection points.")
     parser.add_argument('-t', '--tfm', type=str, default='../data/output/calib_result.csv',
@@ -93,30 +62,40 @@ if __name__ == '__main__':
     with open(args.cam, 'r') as stream:
         dct = yaml.safe_load(stream)
 
-    cam = Camera(**dct)
+
+    if dct['model_type'] == 'PINHOLE':
+        proj_param = dct['projection_parameters']
+        dist_param = dct['distortion_parameters']
+        cam = camera_model.PinholeCam(proj_param, dist_param)
+    elif dct['model_type'] == 'MEI':
+        proj_param = dct['projection_parameters']
+        dist_param = dct['distortion_parameters']
+        mirr_param = dct['mirror_parameters']['xi']
+        cam = camera_model.MEICam(proj_param, dist_param, mirr_param)
+    else:
+        raise NotImplementedError('Camera type {} not implemented yet!'.format(dct['camera_type']))
 
     # project point cloud
     for i, fname in enumerate(pcd_csv_ls):
         pts_pcd = pd.read_csv(fname).to_numpy()
         pts_cam = (np.dot(rot, pts_pcd.T) + np.expand_dims(t, 1)).T
-        img = get_reprojection_img(img, cam, pts_cam, np.array(color_ls[i])*255)
+        img, _ = get_reprojection_img(img, cam, pts_cam, np.array(color_ls[i])*255)
 
     # TODO: proejct intersections
-    # # project plane intersection of lidar frame
-    # intersec_pcd = pd.read_csv('../data/output/plane_normals_and_intersection_pcd.csv', index_col=0).to_numpy()[-1]
-    # intersec_pcd_cam = np.dot(rot, intersec_pcd) + t
-    # intersec_pcd_cam = np.expand_dims(intersec_pcd_cam, axis=0)
-    # coord = cam.project_pts(intersec_pcd_cam)
-    # # coord = proj(intersec_pcd, rot, t, intr)
-    # print('pcd:', coord)
-    # cv2.circle(img, (coord[0][0], coord[0][1]), pt_size+2, (255, 255, 255), thickness=-1)
-
-    # # project plane intersection of camera frame
-    # intersec_cam = pd.read_csv('../data/output/plane_normals_and_intersection_cam.csv', index_col=0).to_numpy()[-1]
-    # intersec_cam = np.expand_dims(intersec_cam, axis=0)
-    # coord = cam.project_pts(intersec_cam)
-    # print('cam:', coord)
-    # cv2.circle(img, (coord[0][0], coord[0][1]), pt_size, (0, 0, 0), thickness=-1)
+    # project plane intersection of lidar frame
+    intersec_pcd = pd.read_csv(args.itsc_pcd).to_numpy()
+    intersec_pcd_cam = (np.dot(rot, intersec_pcd.T) + np.expand_dims(t, 1)).T
+    img, coord_pcd_itsc = get_reprojection_img(img, cam, intersec_pcd_cam, np.array([255, 255, 255]))
+    
+    # project plane intersection of camera frame
+    intersec_cam = pd.read_csv(args.itsc_cam).to_numpy()
+    img, coord_cam_itsc = get_reprojection_img(img, cam, intersec_cam, np.array([0, 0, 0]))
 
     # save reprojected image
     cv2.imwrite(args.output, img)
+
+    if args.verbose:
+        print('---------------------------------------------------')
+        print('Projection of interscections in pcd frame:{}'.format(coord_pcd_itsc))
+        print('Projection of interscections in cam frame:{}'.format(coord_cam_itsc))
+        print('Reprojected results saved to {}.'.format(args.output))

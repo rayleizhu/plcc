@@ -1,3 +1,6 @@
+# Author: Zhu Lei
+# Email: leifzhu@foxmail.com
+
 from __future__ import print_function
 import os
 import cv2
@@ -90,10 +93,11 @@ def get_cam_info_from_rosbag(bag_file, topic):
             d['image_height'] = msg.height
             K = msg.K
             D = msg.D
+            #http://docs.ros.org/melodic/api/sensor_msgs/html/msg/CameraInfo.html
             d['distortion_parameters']={'k1':D[0],
                                         'k2':D[1],
-                                        'p1':D[3],
-                                        'p2':D[4]}
+                                        'p1':D[2],
+                                        'p2':D[3]}
             d['projection_parameters']={'fx':K[0],
                                         'fy':K[4],
                                         'cx':K[2],

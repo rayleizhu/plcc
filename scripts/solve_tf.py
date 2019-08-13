@@ -1,5 +1,6 @@
 # Author: Zhu Lei
 # Email: leifzhu@foxmail.com
+
 from __future__ import print_function
 
 import pandas as pd
@@ -77,6 +78,10 @@ def main():
                         help="csv file containing planes in target frame.")
     parser.add_argument('-o', '--output', type=str, default='../data/output/calibration_result.csv',
                         help="output file for calibration result.")
+    parser.add_argument('--itsc-src', type=str, default='../data/output/intersection_src.csv',
+                        help="output file for intersections in camera frame.")
+    parser.add_argument('--itsc-tgt', type=str, default='../data/output/intersection_tgt.csv',
+                        help="output file for intersections in lidar frame.")
     parser.add_argument('-q', '--quiet', dest='verbose', action='store_false', help='Work sliently')
     parser.set_defaults(verbose=True)
     parser.add_argument('-c', '--cos-th', type=float, default=0.85,
@@ -102,8 +107,24 @@ def main():
     
     rot_quat = R.from_euler('zyx', report.x, degrees=True).as_quat()
     output = np.append(t, rot_quat)
-    df = pd.DataFrame(data=np.expand_dims(output, axis=0), columns=['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw'])
-    df.to_csv(args.output, index=False)
+    df_calib_res = pd.DataFrame(data=np.expand_dims(output, axis=0), columns=['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw'])
+    df_calib_res.to_csv(args.output, index=False)
+
+    itsc_src_valid = []
+    for itsc in src_itsc:
+        if itsc[0]:
+            itsc_src_valid.append(itsc[1])
+    df_itsc_src_valid = pd.DataFrame(data=np.stack(itsc_src_valid),
+                                     columns=['x', 'y', 'z'])
+    df_itsc_src_valid.to_csv(args.itsc_src, index=False)
+
+    itsc_tgt_valid = []
+    for itsc in tgt_itsc:
+        if itsc[0]:
+            itsc_tgt_valid.append(itsc[1])
+    df_itsc_tgt_valid = pd.DataFrame(data=np.stack(itsc_tgt_valid),
+                                     columns=['x', 'y', 'z'])
+    df_itsc_tgt_valid.to_csv(args.itsc_tgt, index=False)
 
     if args.verbose:
         print('---------------------------------------------------')
@@ -118,6 +139,7 @@ def main():
         [print(pt) for pt in src_itsc]
         print('++in target frame:')
         [print(pt) for pt in tgt_itsc]
+        print('Intersection points saved to {} and {}'.format(args.itsc_src, args.itsc_tgt))
         print('---------------------------------------------------')
         print('Optimization report:')
         print('++initialization: ', init_euler)

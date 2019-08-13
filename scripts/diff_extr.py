@@ -1,3 +1,6 @@
+# Author: Zhu Lei
+# Email: leifzhu@foxmail.com
+
 import numpy as np
 
 

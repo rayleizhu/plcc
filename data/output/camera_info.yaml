@@ -1,0 +1,14 @@
+camera_name: zed_left_camera_optical_frame
+distortion_parameters:
+  k1: 0.0
+  k2: 0.0
+  p1: 0.0
+  p2: 0.0
+image_height: 720
+image_width: 1280
+model_type: PINHOLE
+projection_parameters:
+  cx: 651.0941162109375
+  cy: 353.8668212890625
+  fx: 671.9417114257812
+  fy: 671.9417114257812

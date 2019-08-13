@@ -2,7 +2,7 @@
 Plane constraint based Lidar-Camera Calibration
 
 ## 1. Quick Start
-We assume you have setup ROS enviroment.
+We assume you have [setup ROS enviroment](http://wiki.ros.org/ROS/Installation).
 
 ### 1.1 One-click installation
 

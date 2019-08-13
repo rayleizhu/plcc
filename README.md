@@ -23,11 +23,11 @@ When the script terminated, you can get results in the directory `data/output/`.
 * reprojection.png: the reprojection result using calibrated realative transformation.
 
 Data directory structure after calibration:
-![assets/data_dir_tree.png](https://github.com/rayleizhu/plcc/assets/data_dir_tree.png "Directory structure")
+![assets/data_dir_tree.png](https://github.com/rayleizhu/plcc/tree/master/assets/data_dir_tree.png "Directory structure")
 
 
 Example of reprojected result:
-![data/output/reprojection.png](https://github.com/rayleizhu/plcc/data/output/reprojection.png "reprojection result sample")
+![data/output/reprojection.png](https://github.com/rayleizhu/plcc/tree/master/data/output/reprojection.png "reprojection result sample")
 
 
 ## 2. Run calibration with your own data
@@ -44,7 +44,7 @@ bash run_all.bash
 ### 2.2 Requirement
 You can use `rosbag info data/input/data.bag` to figure out how should the input bag should be like: 
 
-![assets/data_bag_info.png](https://github.com/rayleizhu/plcc/assets/data_bag_info.png "Data bag ino")
+![assets/data_bag_info.png](https://github.com/rayleizhu/plcc/tree/master/assets/data_bag_info.png "Data bag ino")
 
 Topics:
 * /tf: should containing transformations from each tag to camera. You can use [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros) to achieve this goal.  

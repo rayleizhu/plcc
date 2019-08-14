@@ -58,3 +58,7 @@ Topics:
 [selected_points_publisher](https://github.com/tu-rbo/turbo-ros-pkg): We refer to this repo to write our rviz plugin for point cloud patch selection.  
 [camodocal](https://github.com/hengli/camodocal): We use this repo to calibrate camera intrinsics.  
 [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros): We use it to get camera-tag transformation.
+
+## 4. TODO
+* Add [CharucoBoard detection] (https://docs.opencv.org/3.2.0/d0/d3c/classcv_1_1aruco_1_1CharucoBoard.html)
+* Add rviz plugin tutorial

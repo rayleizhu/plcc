@@ -60,5 +60,5 @@ Topics:
 [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros): We use it to get camera-tag transformation.
 
 ## 4. TODO
-* Add [CharucoBoard detection] (https://docs.opencv.org/3.2.0/d0/d3c/classcv_1_1aruco_1_1CharucoBoard.html)
+* Add [CharucoBoard detection](https://docs.opencv.org/3.2.0/d0/d3c/classcv_1_1aruco_1_1CharucoBoard.html)  
 * Add rviz plugin tutorial

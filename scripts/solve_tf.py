@@ -66,7 +66,9 @@ def get_tfm_via_plane_constraint(source_planes, target_planes, init_euler=[0, 0,
     source_valid = np.stack(source_valid_list)
     target_valid = np.stack(target_valid_list)
     t = np.mean(target_valid.T - np.dot(r, source_valid.T), axis=1)
-
+    # TODO: is the following code wrong?
+    # t = np.dot(np.dot(np.linalg.inv(target_normals.T), target_normals),
+    #            np.dot(target_normals.T, source_planes[:, 3]-target_planes[:, 3]))
     return r, t, res, source_intersec_list, target_intersec_list
 
 def main():

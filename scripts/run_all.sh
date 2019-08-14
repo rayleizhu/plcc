@@ -3,13 +3,20 @@
 # Author: Zhu Lei
 # Email: leifzhu@foxmail.com
 
+###############config region########################
+
 DATA_ROOT=/home/rayleizhu/ros-project/plcc/data
+#DATA_ROOT=/home/rayleizhu/Data/LidarCamCalib/data0810/left
 NTAG=3
 IMG_TOPIC=/zed/zed_node/left/image_rect_color
 CAM_TOPIC=/zed/zed_node/left/camera_info
 PCD_FRAME=velodyne
+PCD_READY=false
+
 COS_TH=0.95
 
+
+####################################################
 # Path of inputs
 PCD_DIR=$DATA_ROOT/output/pcd_patches
 BAG=$DATA_ROOT/input/data.bag
@@ -26,10 +33,25 @@ CALIB_RESULT=$DATA_ROOT/output/calib_result.csv
 IMG_RPJ=$DATA_ROOT/output/reprojection.png
 
 ####################################
-cd ..
-source devel/setup.bash
-rosbag play -q $BAG &
-rviz -f $PCD_FRAME
+
+# cd to plcc root folder, start rviz for pcd patch selection
+if ! $PCD_READY; then
+    cd ..
+    source devel/setup.bash
+    rosbag play -q $BAG &
+    rviz -f $PCD_FRAME
+
+    PLCC_ROOT=$(pwd)
+    STD_DATA_ROOT=$PLCC_ROOT/data
+    GIVEN_DATA_ROOT=$(cd "$DATA_ROOT";pwd)
+
+    if [ "$STD_DATA_ROOT" != "$GIVEN_DATA_ROOT" ]; then
+        mkdir -p $GIVEN_DATA_ROOT/output/pcd_patches/
+        mv $STD_DATA_ROOT/output/pcd_patches/* $GIVEN_DATA_ROOT/output/pcd_patches/
+    fi
+fi
+
+# return scripts folder
 cd scripts
 
 python preprocess.py $NTAG -i $BAG -t $IMG_TOPIC -m $IMG_ORIG -f $CAM_TAG_TF \

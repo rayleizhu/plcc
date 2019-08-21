@@ -63,10 +63,10 @@ press `P`: pushlish selected patch
 
 ## 5. Related projects
 [selected_points_publisher](https://github.com/tu-rbo/turbo-ros-pkg): We refer to this repo to write our rviz plugin for point cloud patch selection.  
-[camodocal](https://github.com/hengli/camodocal): We use this repo to calibrate camera intrinsics.
+[camodocal](https://github.com/hengli/camodocal): We use this repo to calibrate camera intrinsics.  
 [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros): We use it to get camera-tag transformation.
 
 ## 6. TODO
 * Add [CharucoBoard detection](https://docs.opencv.org/3.2.0/d0/d3c/classcv_1_1aruco_1_1CharucoBoard.html)  
-* Add an chapter to introduce how it works
+* Complete part 4 to introduce how it works
 * Refactor the code so that we can run the calibration with one python script and one config file

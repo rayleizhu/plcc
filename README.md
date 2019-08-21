@@ -13,7 +13,7 @@ bash install.bash
 source devel/setup.bash
 ```
 ### 1.2 Test with sample data
-We provided sample data`data/input/data.bag`, you can run a test by runing the following command
+We provided sample data`data/input/data.bag`, you can run a test by executing the following command
 ```
 cd scripts
 bash run_all.bash

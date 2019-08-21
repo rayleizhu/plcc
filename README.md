@@ -61,6 +61,7 @@ press `P`: pushlish selected patch
 
 ## 4. How it works
 The main idea is to use planes to construct correspondence constraints: for each plane we can derive its equation in both camera frame (e.g. using Apriltag detection or Chessboard) and LiDAR frame (fitting point cloud patch), then the normal can be used to constraint roation, and intersection of multiple planes can be used to constraint translation.
+
 ![add_a_picture to present_methodology.png]( "how it works")
 
 ## 5. Explanation of files

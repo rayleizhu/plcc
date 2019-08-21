@@ -81,7 +81,6 @@ if __name__ == '__main__':
         pts_cam = (np.dot(rot, pts_pcd.T) + np.expand_dims(t, 1)).T
         img, _ = get_reprojection_img(img, cam, pts_cam, np.array(color_ls[i])*255)
 
-    # TODO: proejct intersections
     # project plane intersection of lidar frame
     intersec_pcd = pd.read_csv(args.itsc_pcd).to_numpy()
     intersec_pcd_cam = (np.dot(rot, intersec_pcd.T) + np.expand_dims(t, 1)).T

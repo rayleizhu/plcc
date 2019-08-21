@@ -60,14 +60,23 @@ press `F`: focus on selected points
 press `P`: pushlish selected patch  
 
 ## 4. How it works
+The main idea is to use planes to construct correspondence constraints: for each plane we can derive its equation in both camera frame (e.g. using Apriltag detection or Chessboard) and LiDAR frame (fitting point cloud patch), then the normal can be used to constraint roation, and intersection of multiple planes can be used to constraint translation.
+![add_a_picture to present_methodology.png]( "how it works")
 
-## 5. Related projects
+## 5. Explanation of files
+During initial development, I deliberately partition the tool into several modules, many of them can be run seperately. This is for convenience of debugging and readability. It's easy to understand each module by the file name, here I briefly introduce what each file does:
+```
+preprocess.py ...
+```
+
+## 6. Related projects
 [selected_points_publisher](https://github.com/tu-rbo/turbo-ros-pkg): We refer to this repo to write our rviz plugin for point cloud patch selection.  
-[camodocal](https://github.com/hengli/camodocal): We use this repo to calibrate camera intrinsics.
+[camodocal](https://github.com/hengli/camodocal): We use this repo to calibrate camera intrinsics.  
 [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros): We use it to get camera-tag transformation.
 
-## 6. TODO
+## 7. TODO
 * Test and refactor ChArucoBoard detection part
 * Complete part 4 to introduce how it works
+* Complete part 5
 * Refactor the code so that we can run the calibration with one python script and one config file
 * Finish the transformation calculator GUI tool

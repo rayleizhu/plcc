@@ -44,7 +44,7 @@ bash run_all.bash
 ### 2.2 Requirement
 You can use `rosbag info data/input/data.bag` to figure out how the input bag should be like: 
 
-![data_bag_info.png](https://github.com/rayleizhu/plcc/blob/master/assets/data_bag_info.png "Data bag ino")
+![data_bag_info.png](https://github.com/rayleizhu/plcc/blob/master/assets/data_bag_info.png "Data bag info")
 
 Topics:
 * /tf: should containing transformations from each tag to camera. You can use [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros) to achieve this goal.  
@@ -52,13 +52,21 @@ Topics:
 * /zed/zed_node/left/image_rect_color: the topic containing images camera shot. Corresponding variable in `run_all.bash` is `IMG_TOPIC`.
 * /zed/zed_node/left/camera_info: the topic containing images camera information (intrinsics, etc.). Corresponding variable in `run_all.bash` is `CAM_TOPIC`.
 
+## 3. How to use our rviz plugin for point cloud patch selection
+hold `ALT`: moving mode  
+hold `SHIFT`: incremental selection    
+hold `CTRL`: inverse selection  
+press `F`: focus on selected points  
+press `P`: pushlish selected patch  
 
+## 4. How it works
 
-## 3. Related projects
+## 5. Related projects
 [selected_points_publisher](https://github.com/tu-rbo/turbo-ros-pkg): We refer to this repo to write our rviz plugin for point cloud patch selection.  
-[camodocal](https://github.com/hengli/camodocal): We use this repo to calibrate camera intrinsics.  
+[camodocal](https://github.com/hengli/camodocal): We use this repo to calibrate camera intrinsics.
 [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros): We use it to get camera-tag transformation.
 
-## 4. TODO
-* Add [CharucoBoard detection](https://docs.opencv.org/3.2.0/d0/d3c/classcv_1_1aruco_1_1CharucoBoard.html)  
-* Add rviz plugin tutorial
+## 6. TODO
+* Add an chapter to introduce how it works
+* Refactor the code so that we can run the calibration with one python script and one config file
+* Finish the transformation calculator GUI tool

@@ -45,6 +45,9 @@ if ! $PCD_READY; then
     STD_DATA_ROOT=$PLCC_ROOT/data
     GIVEN_DATA_ROOT=$(cd "$DATA_ROOT";pwd)
 
+    # make sure the folder exists
+    mkdir -p $GIVEN_DATA_ROOT/output/pcd_patches/
+
     if [ "$STD_DATA_ROOT" != "$GIVEN_DATA_ROOT" ]; then
         mkdir -p $GIVEN_DATA_ROOT/output/pcd_patches/
         mv $STD_DATA_ROOT/output/pcd_patches/* $GIVEN_DATA_ROOT/output/pcd_patches/

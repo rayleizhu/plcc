@@ -67,6 +67,7 @@ press `P`: pushlish selected patch
 [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros): We use it to get camera-tag transformation.
 
 ## 6. TODO
-* Add an chapter to introduce how it works
+* Test and refactor ChArucoBoard detection part
+* Complete part 4 to introduce how it works
 * Refactor the code so that we can run the calibration with one python script and one config file
 * Finish the transformation calculator GUI tool

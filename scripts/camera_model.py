@@ -14,7 +14,7 @@ class Camera(object):
         return
 
 class PinholeCam(Camera):
-    def __init__(self, proj_param, dist_param):
+    def __init__(self, proj_param, dist_param, resolution):
         """
         args:
             proj_param: dictionary 
@@ -28,6 +28,8 @@ class PinholeCam(Camera):
         self.k2 = dist_param['k2']
         self.p1 = dist_param['p1']
         self.p2 = dist_param['p2']
+        self.height = resolution[0]
+        self.width = resolution[1]
 
     # https://github.com/hengli/camodocal/blob/master/src/camera_models/PinholeCamera.cc
     def _distortion(self, p_u):
@@ -44,14 +46,14 @@ class PinholeCam(Camera):
 
     def space_to_plane(self, p_3d):
         p_3d_front = p_3d[p_3d[:, 2] > 1e-3]  # z > 0
-        p_u = p_3d[:, 0:2] / np.expand_dims(p_3d_front[:, 2], 1)
+        p_u = p_3d_front[:, 0:2] / np.expand_dims(p_3d_front[:, 2], 1)
         p_d = p_u + self._distortion(p_u)
         coord_x = self.fx * p_d[:, 0] + self.cx
         coord_y = self.fy * p_d[:, 1] + self.cy
         return np.stack([coord_x, coord_y], axis=1).astype(int)
 
 class MEICam(Camera):
-    def __init__(self, proj_param, dist_param, mirr_param):
+    def __init__(self, proj_param, dist_param, mirr_param, resolution):
         """
         args:
             proj_param: dictionary 
@@ -69,6 +71,9 @@ class MEICam(Camera):
         self.gamma2 = proj_param['gamma2']
         self.u0 = proj_param['u0']
         self.v0 = proj_param['v0']
+        # resolution
+        self.height = resolution[0]
+        self.width = resolution[1]
     
     def _distortion(self, p_u):
         x2 = p_u[:, 0]**2
@@ -84,8 +89,8 @@ class MEICam(Camera):
 
 
     def space_to_plane(self, p_3d):
-        p_3d_front = p_3d[p_3d[:, 2] > 1e-3]  # z > 0
-        z = p_3d[:, 2] + self.xi * np.linalg.norm(p_3d_front, axis=1)
+        p_3d_front = p_3d[p_3d[:, 2] > 1e-2]  # z > 0
+        z = p_3d_front[:, 2] + self.xi * np.linalg.norm(p_3d_front, axis=1)
         p_u = p_3d[:, 0:2] / np.expand_dims(z, 1)
         p_d = p_u + self._distortion(p_u)
         coord_x = self.gamma1 * p_d[:, 0] + self.u0

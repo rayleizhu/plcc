@@ -68,6 +68,7 @@ if __name__ == '__main__':
     r_list, t_list = get_tfm_from_csv(args.input)
     num_planes = len(r_list)
     coeff_list = []
+    
     for i in range(num_planes):
         coeff = get_tag_plane_in_cam_frame(r_list[i], t_list[i], direction='tag2cam')
         coeff_list.append(coeff)

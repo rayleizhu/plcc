@@ -5,11 +5,11 @@
 
 ###############config region########################
 
-DATA_ROOT=/home/rayleizhu/ros-project/plcc/data
-#DATA_ROOT=/home/rayleizhu/Data/LidarCamCalib/data0810/left
+#DATA_ROOT=/home/rayleizhu/ros-project/plcc/data
+DATA_ROOT=/home/rayleizhu/Data/LidarCamCalib/data0823/first_right
 NTAG=3
-IMG_TOPIC=/zed/zed_node/left/image_rect_color
-CAM_TOPIC=/zed/zed_node/left/camera_info
+IMG_TOPIC=/zed/zed_node/right/image_rect_color
+CAM_TOPIC=/zed/zed_node/right/camera_info
 PCD_FRAME=velodyne
 PCD_READY=false
 

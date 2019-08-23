@@ -141,11 +141,11 @@ if __name__ == '__main__':
                         help="Image topic.")
     parser.add_argument('-c', '--cam-topic', type=str, default='/zed/zed_node/left/camera_info',
                         help="camera info topic.")
-    parser.add_argument('-g', '--tgt-type', type=str, default='marker',
+    parser.add_argument('-g', '--tgt-type', type=str, default='board',
                         help="target type, 'marker' for Apriltag or 'board' for ChAruco board.")
-    parser.add_argument('--marker-len', type=float, default=0.09,
+    parser.add_argument('--marker-len', type=float, default=0.072,
                         help="side length of single marker, only valid when tgt-type is 'board'.")
-    parser.add_argument('--square-len', type=float, default=0.072,
+    parser.add_argument('--square-len', type=float, default=0.090,
                         help="side length of single square on board, only valid when tgt-type is 'board'.") 
     parser.add_argument('-m', '--oimg', type=str, default='../data/output/orig.png',
                         help="Path for saving extracted image.")
@@ -172,6 +172,7 @@ if __name__ == '__main__':
     tf_list = []
     if args.tgt_type == 'marker':
         # TODO: use opencv for single marker detection?
+        # TODO: flexible tag selection?
         tag_names = ['tag_{:d}'.format(i) for i in range(args.ntag)]
         tf_dict = get_tag_cam_tf_from_rosbag(args.input, tag_names, mode='tag2cam')
         for tag in tag_names:
@@ -187,12 +188,13 @@ if __name__ == '__main__':
                          cam_info_dict['distortion_parameters']['p1']])
         tag_names = ['board_{:d}'.format(i) for i in range(args.ntag)]
         for i in range(args.ntag):
+            orig_img = img.copy()
             board, aruco_dict = detect_tags.get_charuco_board_and_dict(i,
                                                                        marker_len=args.marker_len,
                                                                        square_len=args.square_len)
-            img_with_axis, tf = detect_tags.get_tag_cam_tf_from_board(img, board, aruco_dict, cam_mat, dist)
+            img_with_axis, tf = detect_tags.get_tag_cam_tf_from_board(orig_img, board, aruco_dict, cam_mat, dist)
             tf_list.append(tf)
-            #cv2.imwrite('../data/output/board_with_axis_{:d}.png'.format(i), img_with_axis)
+            cv2.imwrite('../data/output/board_with_axis_{:d}.png'.format(i), img_with_axis)
     else:
         raise ValueError("Target type '{}' is not surpported".format(args.tgt_type))
 
@@ -205,7 +207,7 @@ if __name__ == '__main__':
         print('Camera info:')
         print(cam_info_dict)
         print('Extracted image and cam-tag transformation from {}.'.format(args.input))
-        [print('{}:{}'.format(tag, tf_dict[tag])) for tag in tag_names]
+        [print('{}:{}'.format(tag, tf_array[i])) for i, tag in enumerate(tag_names)]
         print('Image saved to {}'.format(args.oimg))
         print('Transformation saved to {}'.format(args.otfm))
         print('Camera info saved to {}'.format(args.ocam))

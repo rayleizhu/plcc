@@ -17,9 +17,12 @@ def get_reprojection_img(orig_img, camera, pts_cam, color, pt_size=1):
     return:
         reprojected image
     """
+    img = orig_img.copy()
     coord = camera.space_to_plane(pts_cam)
     for i in range(len(coord)):
-        cv2.circle(img, (coord[i][0], coord[i][1]), pt_size, color, thickness=-1)
+        if coord[i][0] < camera.width and coord[i][1] < camera.height and \
+           coord[i][0] >= 0 and coord[i][1] >= 0:
+            cv2.circle(img, (coord[i][0], coord[i][1]), pt_size, color, thickness=-1)
     return img, coord
 
 
@@ -66,12 +69,16 @@ if __name__ == '__main__':
     if dct['model_type'] == 'PINHOLE':
         proj_param = dct['projection_parameters']
         dist_param = dct['distortion_parameters']
-        cam = camera_model.PinholeCam(proj_param, dist_param)
+        h = dct['image_height']
+        w = dct['image_width']
+        cam = camera_model.PinholeCam(proj_param, dist_param, (h, w))
     elif dct['model_type'] == 'MEI':
         proj_param = dct['projection_parameters']
         dist_param = dct['distortion_parameters']
         mirr_param = dct['mirror_parameters']['xi']
-        cam = camera_model.MEICam(proj_param, dist_param, mirr_param)
+        h = dct['image_height']
+        w = dct['image_width']
+        cam = camera_model.MEICam(proj_param, dist_param, mirr_param, (h, w))
     else:
         raise NotImplementedError('Camera type {} not implemented yet!'.format(dct['camera_type']))
 

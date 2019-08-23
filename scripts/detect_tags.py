@@ -26,9 +26,9 @@ def get_tag_cam_tf_from_apriltag(img, aruco_dict, marker_len, cam_mat, dist):
     else:
         raise ValueError('No markers detected!')
 
-
-def get_charuco_board_and_dict(id, board_size=(3, 4), marker_size=6, square_len=0.045, marker_len=0.036):
-    size_dict=board_size[0]*board_size[1]
+# square_len 90mm adapts to the size of A3 paper
+def get_charuco_board_and_dict(id, board_size=(3, 4), marker_size=6, square_len=0.090, marker_len=0.072):
+    size_dict = board_size[0]*board_size[1]
     aruco_dict = cv2.aruco.custom_dictionary(size_dict, marker_size, id)
     board = cv2.aruco.CharucoBoard_create(board_size[0],
                                           board_size[1],
@@ -61,7 +61,7 @@ def get_tag_cam_tf_from_board(img, charuco_board, aruco_dict, cam_mat, dist):
         img_with_corner = cv2.aruco.drawDetectedCornersCharuco(img, charucoCorners, charucoIds, (0,255,0))
         retval, rvec, tvec = cv2.aruco.estimatePoseCharucoBoard(charucoCorners,
                                                                 charucoIds,
-                                                                board,
+                                                                charuco_board,
                                                                 cameraMatrix=cam_mat,
                                                                 distCoeffs=dist)
         if retval == True:

@@ -1,17 +1,23 @@
 # PLCC
-Plane constraint based Lidar-Camera Calibration
+Plane constraint based Lidar-Camera Calibration.  
 
 ## 1. Quick Start
 We assume you have [setup ROS enviroment](http://wiki.ros.org/ROS/Installation).
 
-### 1.1 One-click installation
+### 1.1 Installation
+
+**WARNING: the master branch is in development, please checkout v1.0 branch to get stable and usable code.**
 
 ```
 git clone https://github.com/rayleizhu/plcc.git
 cd plcc
+git checkout v1.0
 bash install.bash
 source devel/setup.bash
 ```
+
+The installation script is tested on Ubuntu 18.04. If you fail to install some python library, please install it mannually. See `requirements.txt`.
+
 ### 1.2 Test with sample data
 We provided sample data`data/input/data.bag`, you can run a test by executing the following command
 ```
@@ -66,18 +72,30 @@ The main idea is to use planes to construct correspondence constraints: for each
 
 ## 5. Explanation of files
 During initial development, I deliberately partition the tool into several modules, many of them can be run seperately. This is for convenience of debugging and readability. It's easy to understand each module by the file name, here I briefly introduce what each file does:
-```
-preprocess.py ...
-```
+
+### 5.1 Core scripts
+* `preprocess.py`: it helps you extract image captured by camera, camera-tag transformation, camera info, etc. from rosbag file.  
+* `fit_plane_in_pcd.py`: fits plane equation from point cloud patches.  
+* `fina_plane_in_cam.py`: get plane equation from cam-tag transformation.  
+* `solve_tf.py`: solve Lidar-Camera extrinsic based on plane constraints.  
+* `project_pcd_to_img.py`: for reprojection.  
+The above scripts can be run seperately (you can run any of them with `-h` option to see its arguments) for calibration, or be imported for further development.
+
+### 5.2 Other scripts
+* `run_all.sh`: it connect the whole pipeline with bash script, so that you can run calibration with one command.
+* `camera_model.py`: as its name implies, it includes camera model implementation. Currently, pinhole camera and MEI camera are provided.
+* `utility.py`: some commonly used functions are put into this file.
+* `generate_target.py`: you can generate calibration target (April tag or ChArucoBoard) with it.
+* `diff_extr.py`: solve relative transformation. It's useful to validate calibration precision in a 'differential' manner, e.g., let's say you know the extrinsics between left eye and right eye of ZED stereo camera, and you derive both LiDAR-left extrinsic and LiDAR-right extrinsic with our tool, then you can get 'measured' left-right extrinsic with `diff_extr.py`, finally, you may validate the predcision by comparing it with groud truth extrinsic.
 
 ## 6. Related projects
 [selected_points_publisher](https://github.com/tu-rbo/turbo-ros-pkg): We refer to this repo to write our rviz plugin for point cloud patch selection.  
 [camodocal](https://github.com/hengli/camodocal): We use this repo to calibrate camera intrinsics.  
 [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros): We use it to get camera-tag transformation.
 
+
 ## 7. TODO
-* Test and refactor ChArucoBoard detection part
+* Refactor ChArucoBoard detection part
 * Complete part 4 to introduce how it works
-* Complete part 5
 * Refactor the code so that we can run the calibration with one python script and one config file
 * Finish the transformation calculator GUI tool

@@ -68,7 +68,7 @@ press `P`: pushlish selected patch
 ## 4. How it works
 The main idea is to use planes to construct correspondence constraints: for each plane we can derive its equation in both camera frame (e.g. using Apriltag detection or Chessboard) and LiDAR frame (fitting point cloud patch), then the normal can be used to constraint roation, and intersection of multiple planes can be used to constraint translation.
 
-![methodology.png](https://github.com/rayleizhu/plcc/blob/master/data/output/how_it_works.png "how it works")
+![methodology.png](https://github.com/rayleizhu/plcc/blob/master/assets/how_it_works.png "how it works")
 
 ## 5. Explanation of files
 During initial development, I deliberately partition the tool into several modules, many of them can be run seperately. This is for convenience of debugging and readability. It's easy to understand each module by the file name, here I briefly introduce what each file does:

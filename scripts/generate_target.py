@@ -1,3 +1,6 @@
+# Author: Zhu Lei
+# Email: leifzhu@foxmail.com
+
 import detect_tags
 import cv2
 import argparse

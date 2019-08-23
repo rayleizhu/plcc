@@ -1,3 +1,6 @@
+# Author: Zhu Lei
+# Email: leifzhu@foxmail.com
+
 from project_pcd_to_img import get_reprojection_img
 import camera_model
 import yaml

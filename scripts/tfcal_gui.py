@@ -1,3 +1,6 @@
+# Author: Zhu Lei
+# Email: leifzhu@foxmail.com
+
 import Tkinter
 
 # TODO: in development

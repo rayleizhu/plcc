@@ -53,10 +53,16 @@ You can use `rosbag info data/input/data.bag` to figure out how the input bag sh
 ![data_bag_info.png](https://github.com/rayleizhu/plcc/blob/master/assets/data_bag_info.png "Data bag info")
 
 Topics:
-* /tf: should containing transformations from each tag to camera. You can use [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros) to achieve this goal.  
+* /tf: should contain transformations from each tag to camera. You can use [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros) to achieve this goal.  
 * /velodyne_points: the topic containing point cloud. The name of this topic is depend on the sensor you are using. Importantly, you need to change `PCD_FRAME` in `run_all.bash` corrspondingly as the frame point cloud resides in.
 * /zed/zed_node/left/image_rect_color: the topic containing images camera shot. Corresponding variable in `run_all.bash` is `IMG_TOPIC`.
 * /zed/zed_node/left/camera_info: the topic containing images camera information (intrinsics, etc.). Corresponding variable in `run_all.bash` is `CAM_TOPIC`.
+
+**Note that**, When you record data, we assume the x axis of LiDAR points to calibration target planes, we use this assumption to figure out correct direction of plane normal (each plane has two-side normals),  see [line 197 of `fit_plane_in_pcd.py`](https://github.com/rayleizhu/plcc/blob/bb4585f6ec41dc94f13e5debccaa03bc42d43b6d/scripts/fit_plane_in_pcd.py#L197).  
+
+### 2.3 Tips
+1. you'd better
+
 
 ## 3. How to use our rviz plugin for point cloud patch selection
 hold `ALT`: moving mode  
@@ -96,6 +102,6 @@ The above scripts can be run seperately (you can run any of them with `-h` optio
 
 ## 7. TODO
 * Refactor ChArucoBoard detection part
-* Complete part 4 to introduce how it works
 * Refactor the code so that we can run the calibration with one python script and one config file
+* Part 2.3 tips
 * Finish the transformation calculator GUI tool
